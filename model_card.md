@@ -1,111 +1,123 @@
-# 🎧 Model Card: Music Recommender Simulation
+# Model Card: Music Recommender Simulation
 
-## 1. Model Name  
+## 1. Model Name
 
-Give your model a short, descriptive name.  
-Example: **VibeFinder 1.0**  
-
----
-
-## 2. Intended Use  
-
-Describe what your recommender is designed to do and who it is for. 
-
-Prompts:  
-
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+**VibeFinder 1.0** — a rule-based, content-based music recommender.
 
 ---
 
-## 3. How the Model Works  
+## 2. Intended Use
 
-Explain your scoring approach in simple language.  
+This recommender is built for classroom exploration only. It is not
+intended for real users or production deployment. Its purpose is to
+demonstrate how recommendation systems turn data into ranked suggestions
+and to practice identifying bias and limitations in AI systems.
 
-Prompts:  
-
-- What features of each song are used (genre, energy, mood, etc.)  
-- What user preferences are considered  
-- How does the model turn those into a score  
-- What changes did you make from the starter logic  
-
-Avoid code here. Pretend you are explaining the idea to a friend who does not program.
+It suggests up to 5 songs from a 10-song catalog based on a user's
+genre preference, mood preference, energy target, and acoustic taste.
 
 ---
 
-## 4. Data  
+## 3. How the Model Works
 
-Describe the dataset the model uses.  
+The recommender compares each song in the catalog to the user's taste
+profile using a point-based scoring system.
 
-Prompts:  
+A song earns **2 points** if its genre matches the user's favorite genre,
+**1 point** if its mood matches, and up to **1 point** based on how close
+its energy level is to what the user wants (closer = more points). If the
+user likes acoustic music and the song is mostly acoustic, it earns an
+extra **0.5 points**.
 
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
-
----
-
-## 5. Strengths  
-
-Where does your system seem to work well  
-
-Prompts:  
-
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
+Songs are then ranked from highest to lowest score. The top results are
+returned together with a plain-English explanation of which factors
+contributed to the score.
 
 ---
 
-## 6. Limitations and Bias 
+## 4. Data
 
-Where the system struggles or behaves unfairly. 
+- **Catalog size:** 10 songs
+- **Genres represented:** pop, lofi, rock, ambient, jazz, synthwave, indie pop
+- **Moods represented:** happy, chill, intense, relaxed, moody, focused
+- **Numeric features:** energy, tempo_bpm, valence, danceability, acousticness
 
-Prompts:  
-
-- Features it does not consider  
-- Genres or moods that are underrepresented  
-- Cases where the system overfits to one preference  
-- Ways the scoring might unintentionally favor some users  
-
----
-
-## 7. Evaluation  
-
-How you checked whether the recommender behaved as expected. 
-
-Prompts:  
-
-- Which user profiles you tested  
-- What you looked for in the recommendations  
-- What surprised you  
-- Any simple tests or comparisons you ran  
-
-No need for numeric metrics unless you created some.
+The dataset was provided as part of the CodePath AI110 starter project.
+No songs were added or removed. The catalog skews toward
+electronic/modern genres and does not include classical, country,
+hip-hop, or R&B — meaning users who prefer those genres will always
+receive low-confidence recommendations.
 
 ---
 
-## 8. Future Work  
+## 5. Strengths
 
-Ideas for how you would improve the model next.  
-
-Prompts:  
-
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
+- Works well for users whose preferred genre and mood appear in the catalog.
+- The energy closeness formula is fair — it rewards songs that are *close*
+  to the user's target, not just songs with the highest or lowest energy.
+- Every recommendation comes with a readable explanation.
+- Simple scoring makes the model transparent and easy to debug.
 
 ---
 
-## 9. Personal Reflection  
+## 6. Limitations and Bias
 
-A few sentences about your experience.  
+- **Genre dominance:** Genre is worth 2 points — more than any other
+  factor. Users whose genre is absent from the catalog (e.g. classical)
+  will receive recommendations based purely on mood and energy, which may
+  feel wrong.
+- **Filter bubble:** The system always returns the same songs for the
+  same input. There is no diversity or serendipity mechanism.
+- **Small catalog:** With only 10 songs, ties in score are common and the
+  top-3 results exhaust most of the meaningful matches quickly.
+- **Missing features:** Lyrics, language, tempo range preference, and
+  artist familiarity are not considered.
+- **Acoustic signal is weak:** The acousticness bonus (+0.5) is smaller
+  than all other signals, so it rarely changes the ranking on its own.
 
-Prompts:  
+---
 
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps  
+## 7. Evaluation
+
+Four user profiles were tested:
+
+| Profile | Expected top result | Actual top result | Match? |
+|---------|--------------------|--------------------|--------|
+| High-Energy Pop | Sunrise City or Gym Hero | Sunrise City (score ≈ 3.94) | Yes |
+| Chill Lofi | Library Rain or Midnight Coding | Library Rain (score ≈ 4.47) | Yes |
+| Deep Intense Rock | Storm Runner | Storm Runner (score ≈ 3.99) | Yes |
+| Jazz / Intense edge case | Low scores for all | Coffee Shop Stories (score ≈ 1.63) | Partial — genre matched but mood did not |
+
+**Weight-shift experiment:** Energy weight was doubled (×2.0) and genre
+weight was halved (×1.0). The Jazz/Intense profile changed significantly:
+Coffee Shop Stories moved up because its energy (0.37) was penalized less
+once genre mattered less. The High-Energy Pop profile barely changed
+because Gym Hero already had both genre AND a close energy match.
+
+---
+
+## 8. Future Work
+
+- Add diversity: avoid recommending two songs by the same artist in a
+  single top-5 list.
+- Expand the catalog to 50+ songs so edge-case profiles have more to work
+  with.
+- Add tempo preference to the user profile and include it as a small
+  scoring signal.
+- Support ranges (e.g. "energy between 0.6 and 0.8") instead of a single
+  target.
+- Experiment with collaborative filtering once multiple user profiles and
+  their listening histories are available.
+
+---
+
+## 9. Personal Reflection
+
+Building this recommender made it clear how much a single design choice —
+like making genre worth 2 points instead of 1 — shapes everything the
+model returns. The Jazz/Intense edge case was the most surprising result:
+a jazz-loving user who wants intense music gets Coffee Shop Stories, which
+is relaxed jazz, simply because nothing else in the catalog is closer. In
+a real app, that would feel like a frustrating mismatch. It shows that a
+model can be "correct by its own formula" while still being wrong for the
+user — a reminder that metrics and human experience are not the same thing.
