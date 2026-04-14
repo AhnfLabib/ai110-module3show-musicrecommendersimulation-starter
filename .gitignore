@@ -13,3 +13,26 @@ venv/
 
 # Pytest cache
 .pytest_cache/
+
+# Packaging / tooling
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+
+# Editor / IDE
+.idea/
+
+# Cursor (local workspace metadata)
+.cursor/
+
+# Claude Code (local settings may contain paths or secrets)
+.claude/settings.local.json
+
+# Agent / scratch notes (not part of the assignment bundle)
+*RESEARCH.md
+docs/superpowers/
+
+# Optional local reference derived from the catalog (keep songs.csv tracked)
+data/songs-attributes.md
