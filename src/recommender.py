@@ -31,20 +31,43 @@ class UserProfile:
     likes_acoustic: bool
 
 class Recommender:
-    """
-    OOP implementation of the recommendation logic.
-    Required by tests/test_recommender.py
-    """
+    """OOP wrapper around the scoring logic; required by tests/test_recommender.py."""
+
     def __init__(self, songs: List[Song]):
         self.songs = songs
 
-    def recommend(self, user: UserProfile, k: int = 5) -> List[Song]:
-        # TODO: Implement recommendation logic
-        return self.songs[:k]
+    def _score_song_oop(self, user: "UserProfile", song: Song) -> Tuple[float, List[str]]:
+        """Translate Song/UserProfile objects to dicts and delegate to score_song."""
+        user_prefs = {
+            "genre":          user.favorite_genre,
+            "mood":           user.favorite_mood,
+            "energy":         user.target_energy,
+            "likes_acoustic": user.likes_acoustic,
+        }
+        song_dict = {
+            "id":           song.id,
+            "title":        song.title,
+            "artist":       song.artist,
+            "genre":        song.genre,
+            "mood":         song.mood,
+            "energy":       song.energy,
+            "tempo_bpm":    song.tempo_bpm,
+            "valence":      song.valence,
+            "danceability": song.danceability,
+            "acousticness": song.acousticness,
+        }
+        return score_song(user_prefs, song_dict)
 
-    def explain_recommendation(self, user: UserProfile, song: Song) -> str:
-        # TODO: Implement explanation logic
-        return "Explanation placeholder"
+    def recommend(self, user: "UserProfile", k: int = 5) -> List[Song]:
+        """Return the top k songs sorted by descending score."""
+        scored = [(song, self._score_song_oop(user, song)[0]) for song in self.songs]
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return [song for song, _ in scored[:k]]
+
+    def explain_recommendation(self, user: "UserProfile", song: Song) -> str:
+        """Return a human-readable explanation of why this song was recommended."""
+        _, reasons = self._score_song_oop(user, song)
+        return " | ".join(reasons) if reasons else "No specific match found."
 
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     """Score a single song against user preferences; returns (score, reasons)."""
