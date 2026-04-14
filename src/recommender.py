@@ -46,6 +46,34 @@ class Recommender:
         # TODO: Implement explanation logic
         return "Explanation placeholder"
 
+def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
+    """Score a single song against user preferences; returns (score, reasons)."""
+    score = 0.0
+    reasons = []
+
+    # Genre match: strongest signal
+    if song["genre"] == user_prefs.get("genre", ""):
+        score += 2.0
+        reasons.append(f"Matches your favorite genre ({song['genre']})")
+
+    # Mood match: second strongest
+    if song["mood"] == user_prefs.get("mood", ""):
+        score += 1.0
+        reasons.append(f"Matches your preferred mood ({song['mood']})")
+
+    # Energy closeness: songs near the target score highest
+    target_energy = user_prefs.get("energy", 0.5)
+    energy_closeness = 1.0 - abs(target_energy - song["energy"])
+    score += energy_closeness
+    reasons.append(f"Energy closeness score: {energy_closeness:.2f} (target {target_energy}, song {song['energy']})")
+
+    # Acoustic bonus: optional soft signal
+    if user_prefs.get("likes_acoustic", False) and song["acousticness"] > 0.6:
+        score += 0.5
+        reasons.append(f"Has the acoustic sound you prefer (acousticness: {song['acousticness']:.2f})")
+
+    return score, reasons
+
 def load_songs(csv_path: str) -> List[Dict]:
     """Load songs from a CSV file and return a list of dictionaries."""
     songs = []
@@ -71,6 +99,12 @@ def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tup
     Functional implementation of the recommendation logic.
     Required by src/main.py
     """
-    # TODO: Implement scoring and ranking logic
-    # Expected return format: (song_dict, score, explanation)
-    return []
+    # Score all songs, rank from highest to lowest, and return the top k results
+    scored = []
+    for song in songs:
+        score, reasons = score_song(user_prefs, song)
+        explanation = " | ".join(reasons)
+        scored.append((song, score, explanation))
+
+    scored.sort(key=lambda x: x[1], reverse=True)
+    return scored[:k]

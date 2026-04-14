@@ -59,3 +59,33 @@ def test_explain_recommendation_returns_non_empty_string():
     explanation = rec.explain_recommendation(user, song)
     assert isinstance(explanation, str)
     assert explanation.strip() != ""
+
+
+from src.recommender import score_song
+
+def test_score_song_genre_and_mood_match():
+    user_prefs = {"genre": "pop", "mood": "happy", "energy": 0.8, "likes_acoustic": False}
+    song = {
+        "id": 1, "title": "Sunrise City", "artist": "Neon Echo",
+        "genre": "pop", "mood": "happy", "energy": 0.82,
+        "tempo_bpm": 118.0, "valence": 0.84, "danceability": 0.79, "acousticness": 0.18,
+    }
+    score, reasons = score_song(user_prefs, song)
+    # genre (+2.0) + mood (+1.0) + energy closeness (1 - |0.8 - 0.82| = 0.98)
+    assert score >= 3.9
+    assert any("genre" in r.lower() for r in reasons)
+    assert any("mood" in r.lower() for r in reasons)
+    assert any("energy" in r.lower() for r in reasons)
+
+
+def test_score_song_no_match():
+    user_prefs = {"genre": "rock", "mood": "intense", "energy": 0.9, "likes_acoustic": False}
+    song = {
+        "id": 2, "title": "Midnight Coding", "artist": "LoRoom",
+        "genre": "lofi", "mood": "chill", "energy": 0.42,
+        "tempo_bpm": 78.0, "valence": 0.56, "danceability": 0.62, "acousticness": 0.71,
+    }
+    score, reasons = score_song(user_prefs, song)
+    # no genre/mood match; energy closeness = 1 - |0.9 - 0.42| = 0.52
+    assert score < 1.0
+    assert isinstance(reasons, list)
